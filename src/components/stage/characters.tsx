@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, type RefObject } from "react";
+import { useMemo, useRef, type RefObject } from "react";
 import { useFrame } from "@react-three/fiber";
+import { CatmullRomCurve3, TubeGeometry, Vector3 } from "three";
 import type { Group } from "three";
 import type { AgentId } from "@/lib/agents";
 import { metrics, palette } from "@/components/stage/art";
@@ -125,14 +126,13 @@ function Gloss({
 }
 
 const dotLobes: [number, number, number, number][] = [
-  [0, 0.74, 0, 0.32],
-  [-0.28, 0.82, 0.04, 0.24],
-  [0.3, 0.78, 0.02, 0.23],
-  [0.02, 1.02, -0.02, 0.2],
-  [-0.12, 0.52, 0.1, 0.2],
-  [0.2, 0.5, 0.08, 0.18],
-  [-0.22, 0.6, -0.06, 0.16],
-  [0.16, 0.96, 0.08, 0.15],
+  [0, 0.72, 0.04, 0.38],
+  [-0.2, 0.8, 0.08, 0.28],
+  [0.22, 0.78, 0.08, 0.27],
+  [0.0, 0.98, 0.04, 0.24],
+  [-0.14, 0.52, 0.1, 0.22],
+  [0.16, 0.5, 0.1, 0.2],
+  [0.06, 0.7, 0.16, 0.2],
 ];
 
 function Dot({ motion, lookRef }: ModelProps) {
@@ -144,9 +144,9 @@ function Dot({ motion, lookRef }: ModelProps) {
           <Gloss color={index % 3 === 0 ? palette.dotDeep : palette.dot} />
         </mesh>
       ))}
-      <group position={[-0.12, 1.08, 0.02]} rotation={[0.25, 0.1, -0.55]}>
-        <mesh scale={[1.2, 0.38, 1.15]}>
-          <sphereGeometry args={[0.22, 16, 12]} />
+      <group position={[-0.02, 1.08, 0.1]} rotation={[0.35, 0.15, -0.7]}>
+        <mesh scale={[1.35, 0.42, 1.25]}>
+          <sphereGeometry args={[0.26, 16, 12]} />
           <meshStandardMaterial color={palette.beret} roughness={0.55} />
         </mesh>
         <mesh position={[0, 0.1, 0]}>
@@ -154,7 +154,7 @@ function Dot({ motion, lookRef }: ModelProps) {
           <meshStandardMaterial color={palette.beret} roughness={0.5} />
         </mesh>
       </group>
-      <group position={[0.02, metrics.dots.headY, 0.3]}>
+      <group position={[0.02, metrics.dots.headY, 0.42]}>
         <BlinkGroup phase={3.1} motion={motion} lookRef={lookRef}>
           <mesh position={[-0.1, 0.02, 0]} scale={[0.72, 1.05, 0.7]}>
             <sphereGeometry args={[0.055, 12, 10]} />
@@ -237,11 +237,15 @@ function Muse({ motion, lookRef }: ModelProps) {
         <sphereGeometry args={[0.38, 22, 16]} />
         <Plush />
       </mesh>
-      <mesh position={[0, metrics.muse.headY, 0.02]}>
+      <mesh position={[0, metrics.muse.headY, 0.04]}>
         <sphereGeometry args={[0.34, 22, 16]} />
         <Plush />
       </mesh>
-      <mesh position={[0, 1.02, 0.16]} rotation={[0.2, 0, 0]}>
+      <mesh position={[0, 1.02, 0.28]} scale={[0.85, 0.95, 0.28]}>
+        <sphereGeometry args={[0.24, 16, 12]} />
+        <meshPhysicalMaterial color="#f8eee6" roughness={0.9} sheen={0.4} sheenColor={palette.musePink} />
+      </mesh>
+      <mesh position={[0, 1.02, 0.22]} rotation={[0.15, 0, 0]}>
         <torusGeometry args={[0.2, 0.045, 8, 18]} />
         <meshPhysicalMaterial color={palette.museDeep} roughness={0.9} sheen={0.5} sheenColor={palette.musePink} />
       </mesh>
@@ -250,7 +254,7 @@ function Muse({ motion, lookRef }: ModelProps) {
         <Plush />
       </mesh>
       <WaveArm motion={motion} />
-      <group position={[0, 1.02, 0.28]}>
+      <group position={[0, 1.02, 0.4]}>
         <BlinkGroup phase={0.4} motion={motion} lookRef={lookRef}>
           <mesh position={[-0.08, 0.03, 0]}>
             <sphereGeometry args={[0.028, 10, 8]} />
@@ -291,14 +295,14 @@ function Grok({ motion, lookRef }: ModelProps) {
         <sphereGeometry args={[0.58, 28, 22]} />
         <Gloss color={palette.grok} roughness={0.32} clearcoat={0.55} clearcoatRoughness={0.38} />
       </mesh>
-      <group position={[0, 0.78, 0.5]}>
+      <group position={[0, 0.78, 0.62]}>
         <BlinkGroup phase={1.3} motion={motion} lookRef={lookRef}>
-          <mesh position={[-0.13, 0.02, 0]} rotation={[0, 0, 0.38]}>
-            <capsuleGeometry args={[0.048, 0.07, 6, 10]} />
+          <mesh position={[-0.14, 0.02, 0]} rotation={[0, 0, 0.45]}>
+            <capsuleGeometry args={[0.055, 0.09, 6, 10]} />
             <meshBasicMaterial color={palette.eye} />
           </mesh>
-          <mesh position={[0.13, 0.02, 0]} rotation={[0, 0, -0.38]}>
-            <capsuleGeometry args={[0.048, 0.07, 6, 10]} />
+          <mesh position={[0.14, 0.02, 0]} rotation={[0, 0, -0.45]}>
+            <capsuleGeometry args={[0.055, 0.09, 6, 10]} />
             <meshBasicMaterial color={palette.eye} />
           </mesh>
         </BlinkGroup>
@@ -322,9 +326,9 @@ function FlexArms({ motion }: { motion: boolean }) {
     group.scale.set(pump, pump, pump);
   });
   const arm = (side: number) => (
-    <group position={[side * 0.38, 0.78, 0.08]} rotation={[0.2, 0, side * -1.15]}>
+    <group position={[side * 0.42, 0.86, 0.12]} rotation={[0.15, 0, side * -1.25]}>
       <mesh>
-        <capsuleGeometry args={[0.075, 0.1, 4, 8]} />
+        <capsuleGeometry args={[0.085, 0.12, 4, 8]} />
         <Gloss color={palette.claude} emissive={palette.claudeGlow} emissiveIntensity={0.2} />
       </mesh>
       <mesh position={[side * 0.02, 0.14, 0]} rotation={[0, 0, side * 1.15]}>
@@ -368,7 +372,25 @@ function Sparkles({ motion }: { motion: boolean }) {
   );
 }
 
+function useSquiggle() {
+  return useMemo(() => {
+    const points: Vector3[] = [];
+    const loop = (cx: number, start: number, end: number) => {
+      const steps = 18;
+      for (let i = 0; i <= steps; i += 1) {
+        const angle = start + ((end - start) * i) / steps;
+        points.push(new Vector3(cx + Math.cos(angle) * 0.1, Math.sin(angle) * 0.07, 0));
+      }
+    };
+    loop(-0.1, Math.PI * 0.15, Math.PI * 1.85);
+    loop(0.1, Math.PI * 0.15, Math.PI * 1.85);
+    const curve = new CatmullRomCurve3(points);
+    return new TubeGeometry(curve, 40, 0.028, 6, false);
+  }, []);
+}
+
 function ClaudeDuet({ motion, lookRef }: ModelProps) {
+  const squiggle = useSquiggle();
   return (
     <group>
       <pointLight position={[0, 0.9, 0.4]} intensity={0.55} color={palette.claudeGlow} distance={3.2} />
@@ -385,14 +407,9 @@ function ClaudeDuet({ motion, lookRef }: ModelProps) {
         <Gloss color={palette.claude} emissive={palette.claudeGlow} emissiveIntensity={0.15} />
       </mesh>
       <FlexArms motion={motion} />
-      <group position={[0, metrics.claude.headY, 0.4]} rotation={[0.15, 0, 0]}>
+      <group position={[0, metrics.claude.headY, 0.52]}>
         <BlinkGroup phase={2.2} motion={motion} lookRef={lookRef}>
-          <mesh position={[-0.1, 0.02, 0]} rotation={[0.4, 0, 0]}>
-            <torusGeometry args={[0.09, 0.026, 8, 16, Math.PI * 1.65]} />
-            <meshBasicMaterial color="#141414" />
-          </mesh>
-          <mesh position={[0.1, 0.02, 0]} rotation={[0.4, 0, 0]}>
-            <torusGeometry args={[0.09, 0.026, 8, 16, Math.PI * 1.65]} />
+          <mesh geometry={squiggle} rotation={[0.15, 0, 0]}>
             <meshBasicMaterial color="#141414" />
           </mesh>
         </BlinkGroup>

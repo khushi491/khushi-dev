@@ -174,8 +174,8 @@ function PanelBody({
   const others = agentOrder.filter((id) => id !== agent.id);
 
   return (
-    <div className="relative z-10 flex flex-col px-4 pb-24 pt-4 sm:px-8 sm:pb-28 sm:pl-40 sm:pr-32 sm:pt-7">
-      <div className="flex items-start justify-between gap-4">
+    <div className="relative z-10 flex flex-col py-6 pr-4 pb-28 pl-28 sm:py-8 sm:pr-32 sm:pb-28 sm:pl-40">
+      <div className="flex items-start justify-between gap-3 pr-32 sm:pr-0">
         <div>
           <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-gold">
             {agent.role}
