@@ -172,7 +172,7 @@ export function AgentStage() {
       } ${pop ? "stage-pop" : ""}`}
     >
       <p id={labelId} className="sr-only">
-        A stage with four agents: Muse, Grokbot, Claude Duel, and dots. They
+        A stage with four agents: Muse, Grok, Claude Duet, and Dot. They
         bounce, and now and then they squabble over who introduces Khushi.
         Activate one to hear a short introduction. Press escape to close it.
       </p>
@@ -224,7 +224,7 @@ export function AgentStage() {
                 key={id}
                 id={`agent-${id}`}
                 type="button"
-                className="group relative flex items-end justify-center pb-8 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-8px] focus-visible:outline-[#c4a56a]"
+                className="group relative flex flex-col items-center justify-end gap-1 pb-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-8px] focus-visible:outline-[#c4a56a]"
                 aria-label={`${agent.name}, ${agent.role}. Hear this introduction.`}
                 onMouseEnter={() => setHovered(id)}
                 onMouseLeave={() => setHovered((current) => (current === id ? null : current))}
@@ -236,17 +236,16 @@ export function AgentStage() {
                 <img
                   src={`/agents/${id}.svg`}
                   alt=""
-                  className={`h-[72%] w-auto max-w-[92%] object-contain transition-opacity duration-500 ${
-                    showArt ? "opacity-100" : "opacity-0"
+                  className={`h-[68%] w-auto max-w-[92%] object-contain transition-opacity duration-500 ${
+                    showArt ? "opacity-100" : "pointer-events-none opacity-0"
                   } ${mode === "fallback" ? "idle-bob" : ""}`}
                   style={{ animationDelay: `${index * 0.35}s` }}
                 />
-                <span
-                  data-hot={hovered === id ? "true" : "false"}
-                  className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-[#0e0f0e]/85 px-2.5 py-1 font-mono text-[11px] tracking-[0.14em] text-gold opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 data-[hot=true]:opacity-100 max-sm:opacity-100"
-                >
-                  {agent.name}
-                </span>
+                {showArt ? (
+                  <span className="pointer-events-none rounded-full bg-[#0e0f0e]/85 px-2.5 py-1 font-mono text-[11px] tracking-[0.14em] text-gold">
+                    {agent.name}
+                  </span>
+                ) : null}
               </button>
             );
           })}

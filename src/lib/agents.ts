@@ -90,11 +90,11 @@ export const agents: Record<AgentId, AgentScript> = {
   },
   grokbot: {
     id: "grokbot",
-    name: "Grokbot",
+    name: "Grok",
     role: "The quick one",
     victory: "Yes! My turn!",
     intro:
-      "I am Grokbot. I will be quick. Backend, full stack, and applied AI, plus payments and agents that call tools. The skills carousel below is the real list. I did not add anything she does not use.",
+      "I am Grok. I will be quick. Backend, full stack, and applied AI, plus payments and agents that call tools. The skills carousel below is the real list. I did not add anything she does not use.",
     beats: [
       {
         id: "backend",
@@ -121,11 +121,11 @@ export const agents: Record<AgentId, AgentScript> = {
   },
   claude: {
     id: "claude",
-    name: "Claude Duel",
+    name: "Claude Duet",
     role: "Projects",
     victory: "Ha! My turn!",
     intro:
-      "I am Claude Duel. Projects, then. I will keep this accurate, even if I would like to gloat. Pick one.",
+      "I am Claude Duet. Projects, then. I will keep this accurate, even if I would like to gloat. Pick one.",
     beats: [
       {
         id: "monsoon",
@@ -167,11 +167,11 @@ export const agents: Record<AgentId, AgentScript> = {
   },
   dots: {
     id: "dots",
-    name: "dots",
+    name: "Dot",
     role: "Contact",
     victory: "Oh. My turn?",
     intro:
-      "Oh. Hi. I am dots. I can share how to reach Khushi, if that is alright. She is in New York.",
+      "Oh. Hi. I am Dot. I can share how to reach Khushi, if that is alright. She is in New York.",
     beats: [
       {
         id: "email",

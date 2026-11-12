@@ -169,7 +169,7 @@ body {
 .speech-bubble {
   position: relative;
   width: max-content;
-  max-width: 11rem;
+  max-width: 8.5rem;
   border-radius: 1rem;
   background: #f3ead7;
   color: #1c1914;

@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Html } from "@react-three/drei";
 import {
   MathUtils,
   MeshBasicMaterial,
@@ -10,10 +9,13 @@ import {
   Shape,
   ShapeGeometry,
   SRGBColorSpace,
+  Vector3,
 } from "three";
+import type { Camera } from "three";
 import type { Group, Mesh } from "three";
 import {
   agentOrder,
+  agents,
   scuffleLines,
   type AgentId,
 } from "@/lib/agents";
@@ -35,10 +37,10 @@ const homes: Record<Layout, Record<AgentId, Point>> = {
     dots: { x: 1.78, y: 0 },
   },
   grid: {
-    muse: { x: -0.92, y: 1.15 },
-    grokbot: { x: 0.92, y: 1.15 },
-    claude: { x: -0.92, y: -0.15 },
-    dots: { x: 0.92, y: -0.15 },
+    muse: { x: -0.95, y: 1.55 },
+    grokbot: { x: 0.95, y: 1.55 },
+    claude: { x: -0.95, y: -0.5 },
+    dots: { x: 0.95, y: -0.5 },
   },
 };
 
@@ -61,8 +63,30 @@ function makeStar() {
 
 const cameraFor: Record<Layout, { position: [number, number, number]; fov: number }> = {
   row: { position: [0, 0.86, 6.75], fov: 32 },
-  grid: { position: [0, 0.9, 8.3], fov: 36 },
+  grid: { position: [0, 0.62, 9.4], fov: 34 },
 };
+
+type AnchorMap = Record<AgentId, HTMLDivElement | null>;
+
+function projectToScreen(
+  object: Group,
+  local: Vector3,
+  camera: Camera,
+  width: number,
+  height: number,
+  node: HTMLDivElement | null,
+  shiftY: string,
+) {
+  if (!node) return false;
+  object.updateWorldMatrix(true, false);
+  local.applyMatrix4(object.matrixWorld);
+  local.project(camera);
+  const rawX = (local.x * 0.5 + 0.5) * width;
+  const x = Math.min(width - 78, Math.max(78, rawX));
+  const y = (-local.y * 0.5 + 0.5) * height;
+  node.style.transform = `translate(${x}px, ${y}px) translate(-50%, ${shiftY})`;
+  return local.z <= 1;
+}
 
 function Actor({
   id,
@@ -71,8 +95,9 @@ function Actor({
   layoutScale,
   scuffle,
   hovered,
+  showName,
   victory,
-  line,
+  anchorsRef,
 }: {
   id: AgentId;
   home: Point;
@@ -80,15 +105,18 @@ function Actor({
   layoutScale: number;
   scuffle: Scuffle | null;
   hovered: boolean;
+  showName: boolean;
   victory: boolean;
-  line: string | null;
+  anchorsRef: React.RefObject<{ bubble: AnchorMap; name: AnchorMap }>;
 }) {
   const body = useRef<Group>(null);
   const shadow = useRef<Mesh>(null);
   const perk = useRef(0);
+  const bubblePoint = useRef(new Vector3());
+  const namePoint = useRef(new Vector3());
   const { speed, phase } = bounce[id];
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     const group = body.current;
     if (!group) return;
     const now = performance.now();
@@ -109,8 +137,8 @@ function Actor({
       rot = fight.rot;
       face = fight.face;
     } else {
-      const wave = Math.sin(now / 1000 * speed + phase);
-      const hop = Math.pow(Math.abs(wave), 1.2) * 0.18;
+      const wave = Math.sin((now / 1000) * speed + phase);
+      const hop = Math.pow(Math.abs(wave), 1.2) * 0.11;
       const grounded = Math.max(0, 1 - Math.abs(wave) * 4);
       squash = Math.min(1, grounded * grounded);
       stretch = Math.min(1, hop / 0.18);
@@ -135,6 +163,35 @@ function Actor({
       const material = shadow.current.material as MeshBasicMaterial;
       material.opacity = 0.18 + squash * 0.08;
     }
+
+    const { width, height } = state.size;
+    const bubbleNode = anchorsRef.current.bubble[id];
+    const nameNode = anchorsRef.current.name[id];
+    bubblePoint.current.set(0, metrics[id].bubbleY, 0);
+    const bubbleOn = projectToScreen(
+      group,
+      bubblePoint.current,
+      state.camera,
+      width,
+      height,
+      bubbleNode,
+      "-120%",
+    );
+    if (bubbleNode) {
+      bubbleNode.style.visibility =
+        bubbleOn && bubbleNode.dataset.on === "1" ? "visible" : "hidden";
+    }
+    namePoint.current.set(0, metrics[id].nameY, 0);
+    const nameOn = projectToScreen(
+      group,
+      namePoint.current,
+      state.camera,
+      width,
+      height,
+      nameNode,
+      "8%",
+    );
+    if (nameNode) nameNode.style.visibility = showName && nameOn ? "visible" : "hidden";
   });
 
   return (
@@ -145,16 +202,6 @@ function Actor({
       </mesh>
       <group ref={body} position={[home.x, home.y, 0]}>
         <CharacterModel id={id} motion />
-        {line ? (
-          <Html
-            position={[0, metrics[id].bubbleY, 0]}
-            center
-            wrapperClass="speech-anchor"
-            zIndexRange={[20, 0]}
-          >
-            <div className="speech-bubble">{line}</div>
-          </Html>
-        ) : null}
       </group>
     </>
   );
@@ -216,13 +263,13 @@ function StageScene({
   scuffle,
   hovered,
   victoryId,
-  victoryLine,
+  anchorsRef,
 }: {
   layout: Layout;
   scuffle: Scuffle | null;
   hovered: AgentId | null;
   victoryId: AgentId | null;
-  victoryLine: string | null;
+  anchorsRef: React.RefObject<{ bubble: AnchorMap; name: AnchorMap }>;
 }) {
   const spots = homes[layout];
   const layoutScale = scaleFor[layout];
@@ -231,14 +278,6 @@ function StageScene({
     if (!scuffle || (id !== scuffle.a && id !== scuffle.b)) return null;
     const otherId = id === scuffle.a ? scuffle.b : scuffle.a;
     return spots[otherId];
-  };
-
-  const lineFor = (id: AgentId) => {
-    if (victoryId === id && victoryLine) return victoryLine;
-    if (!scuffle) return null;
-    if (id === scuffle.a) return scuffle.lineA;
-    if (id === scuffle.b) return scuffle.lineB;
-    return null;
   };
 
   return (
@@ -269,8 +308,9 @@ function StageScene({
           layoutScale={layoutScale}
           scuffle={scuffle}
           hovered={hovered === id}
+          showName={hovered === id || layout === "grid"}
           victory={victoryId === id}
-          line={lineFor(id)}
+          anchorsRef={anchorsRef}
         />
       ))}
       <Dust scuffle={scuffle} homesFor={spots} />
@@ -354,8 +394,22 @@ export function WebGLStage({
 }) {
   const scuffle = useScuffle(playing && !victoryId, hovered, victoryId);
   const readySent = useRef(false);
+  const anchors = useRef<{ bubble: AnchorMap; name: AnchorMap }>({
+    bubble: { muse: null, grokbot: null, claude: null, dots: null },
+    name: { muse: null, grokbot: null, claude: null, dots: null },
+  });
+  const live = playing ? scuffle : null;
+
+  const lineFor = (id: AgentId) => {
+    if (victoryId === id && victoryLine) return victoryLine;
+    if (!live) return null;
+    if (id === live.a) return live.lineA;
+    if (id === live.b) return live.lineB;
+    return null;
+  };
 
   return (
+    <div className="relative h-full w-full">
     <Canvas
       key={layout}
       dpr={[1, 1.5]}
@@ -383,8 +437,38 @@ export function WebGLStage({
         scuffle={playing ? scuffle : null}
         hovered={hovered}
         victoryId={victoryId}
-        victoryLine={victoryLine}
+        anchorsRef={anchors}
       />
     </Canvas>
+    <div className="pointer-events-none absolute inset-0 z-10">
+      {agentOrder.map((id) => {
+        const line = lineFor(id);
+        const showName = hovered === id || layout === "grid";
+        return (
+          <div key={id}>
+            <div
+              ref={(node) => {
+                anchors.current.bubble[id] = node;
+              }}
+              data-on={line ? "1" : "0"}
+              className="speech-bubble absolute left-0 top-0"
+              style={{ visibility: line ? "visible" : "hidden" }}
+            >
+              {line}
+            </div>
+            <div
+              ref={(node) => {
+                anchors.current.name[id] = node;
+              }}
+              className="absolute left-0 top-0 rounded-full bg-[#0e0f0e]/85 px-2.5 py-1 font-mono text-[11px] tracking-[0.14em] text-[#c4a56a]"
+              style={{ visibility: showName ? "visible" : "hidden" }}
+            >
+              {agents[id].name}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+    </div>
   );
 }
